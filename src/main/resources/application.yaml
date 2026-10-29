@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: anvux-backend
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:anvux}
+    username: ${DB_USER:anvux}
+    password: ${DB_PASSWORD:anvux_dev_password}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: anvux-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-anvux}
+      POSTGRES_USER: ${DB_USER:-anvux}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-anvux_dev_password}
+    ports:
+      - "5433:5432"
+    volumes:
+      - anvux_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-anvux} -d ${DB_NAME:-anvux}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  anvux_pgdata:
