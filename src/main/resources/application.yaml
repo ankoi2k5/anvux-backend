@@ -21,3 +21,9 @@ management:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+app:
+  security:
+    jwt-secret: ${JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
+    access-token-minutes: 15
+    refresh-token-days: 30
