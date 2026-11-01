@@ -263,4 +263,86 @@ class ProjectTaskApiIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/v1/tasks/" + taskId).header(AUTH, bearer(token)))
                 .andExpect(status().isNotFound());
     }
+    // ---------- Idempotency ----------
+
+    @Test
+    void createTask_withSameIdempotencyKey_createsOnlyOnce() throws Exception {
+        String token = registerAndGetToken();
+        String projectId = createProject(token, "DoAn");
+        String body = """
+                {"projectId":"%s","title":"VietBaoCao"}""".formatted(projectId);
+        String key = UUID.randomUUID().toString();
+
+        String first = mockMvc.perform(post("/api/v1/tasks")
+                        .header(AUTH, bearer(token))
+                        .header("Idempotency-Key", key)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        String firstId = JsonPath.read(first, "$.id");
+
+        mockMvc.perform(post("/api/v1/tasks")
+                        .header(AUTH, bearer(token))
+                        .header("Idempotency-Key", key)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(firstId));
+
+        mockMvc.perform(get("/api/v1/tasks").header(AUTH, bearer(token)))
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    void createProject_withSameIdempotencyKey_createsOnlyOnce() throws Exception {
+        String token = registerAndGetToken();
+        String key = UUID.randomUUID().toString();
+
+        mockMvc.perform(post("/api/v1/projects")
+                        .header(AUTH, bearer(token))
+                        .header("Idempotency-Key", key)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"DoAn\"}"))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/v1/projects")
+                        .header(AUTH, bearer(token))
+                        .header("Idempotency-Key", key)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"DoAn\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/projects").header(AUTH, bearer(token)))
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    void idempotencyKey_isScopedPerUser() throws Exception {
+        String userA = registerAndGetToken();
+        String userB = registerAndGetToken();
+        String key = UUID.randomUUID().toString();
+
+        for (String token : new String[] {userA, userB}) {
+            mockMvc.perform(post("/api/v1/projects")
+                            .header(AUTH, bearer(token))
+                            .header("Idempotency-Key", key)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"name\":\"DuAnChung\"}"))
+                    .andExpect(status().isCreated());
+        }
+    }
+
+    @Test
+    void idempotencyKey_tooLong_returns400() throws Exception {
+        String token = registerAndGetToken();
+
+        mockMvc.perform(post("/api/v1/projects")
+                        .header(AUTH, bearer(token))
+                        .header("Idempotency-Key", "a".repeat(101))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"DoAn\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_IDEMPOTENCY_KEY"));
+    }
 }

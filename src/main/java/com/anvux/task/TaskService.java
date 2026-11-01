@@ -2,6 +2,7 @@ package com.anvux.task;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.PageRequest;
@@ -9,6 +10,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.anvux.common.CreateResult;
+import com.anvux.common.IdempotencyService;
 import com.anvux.common.ResourceNotFoundException;
 import com.anvux.project.ProjectRepository;
 import com.anvux.task.dto.TaskCreateRequest;
@@ -20,13 +23,16 @@ import com.anvux.task.dto.TaskUpdateRequest;
 public class TaskService {
 
     private static final int MAX_RESULTS = 500;
+    private static final String RESOURCE_TYPE = "TASK";
 
     private final TaskRepository tasks;
     private final ProjectRepository projects;
+    private final IdempotencyService idempotency;
 
-    public TaskService(TaskRepository tasks, ProjectRepository projects) {
+    public TaskService(TaskRepository tasks, ProjectRepository projects, IdempotencyService idempotency) {
         this.tasks = tasks;
         this.projects = projects;
+        this.idempotency = idempotency;
     }
 
     public List<TaskResponse> list(UUID userId,
@@ -49,7 +55,17 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskResponse create(UUID userId, TaskCreateRequest request) {
+    public CreateResult<TaskResponse> create(UUID userId, String idempotencyKey, TaskCreateRequest request) {
+        String key = idempotency.validate(idempotencyKey);
+
+        if (key != null) {
+            Optional<Task> existing = idempotency.findResourceId(userId, key, RESOURCE_TYPE)
+                    .flatMap(id -> tasks.findByIdAndUserId(id, userId));
+            if (existing.isPresent()) {
+                return new CreateResult<>(TaskResponse.from(existing.get()), false);
+            }
+        }
+
         requireOwnedProject(userId, request.projectId());
 
         Task task = new Task(userId, request.projectId(), request.title());
@@ -59,7 +75,12 @@ public class TaskService {
         }
         task.setDueAt(request.dueAt());
         task.setEstimatedMinutes(request.estimatedMinutes());
-        return TaskResponse.from(tasks.save(task));
+        Task saved = tasks.save(task);
+
+        if (key != null) {
+            idempotency.remember(userId, key, RESOURCE_TYPE, saved.getId());
+        }
+        return new CreateResult<>(TaskResponse.from(saved), true);
     }
 
     @Transactional

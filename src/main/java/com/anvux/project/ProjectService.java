@@ -1,11 +1,14 @@
 package com.anvux.project;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.anvux.common.CreateResult;
+import com.anvux.common.IdempotencyService;
 import com.anvux.common.ResourceNotFoundException;
 import com.anvux.project.dto.ProjectCreateRequest;
 import com.anvux.project.dto.ProjectResponse;
@@ -15,10 +18,14 @@ import com.anvux.project.dto.ProjectUpdateRequest;
 @Transactional(readOnly = true)
 public class ProjectService {
 
-    private final ProjectRepository projects;
+    private static final String RESOURCE_TYPE = "PROJECT";
 
-    public ProjectService(ProjectRepository projects) {
+    private final ProjectRepository projects;
+    private final IdempotencyService idempotency;
+
+    public ProjectService(ProjectRepository projects, IdempotencyService idempotency) {
         this.projects = projects;
+        this.idempotency = idempotency;
     }
 
     public List<ProjectResponse> list(UUID userId, boolean includeArchived) {
@@ -33,10 +40,23 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponse create(UUID userId, ProjectCreateRequest request) {
+    public CreateResult<ProjectResponse> create(UUID userId, String idempotencyKey, ProjectCreateRequest request) {
+        String key = idempotency.validate(idempotencyKey);
+
+        if (key != null) {
+            Optional<Project> existing = idempotency.findResourceId(userId, key, RESOURCE_TYPE)
+                    .flatMap(id -> projects.findByIdAndUserId(id, userId));
+            if (existing.isPresent()) {
+                return new CreateResult<>(ProjectResponse.from(existing.get()), false);
+            }
+        }
+
         Project project = projects.save(
                 new Project(userId, request.name(), request.description(), request.color()));
-        return ProjectResponse.from(project);
+        if (key != null) {
+            idempotency.remember(userId, key, RESOURCE_TYPE, project.getId());
+        }
+        return new CreateResult<>(ProjectResponse.from(project), true);
     }
 
     @Transactional

@@ -19,7 +19,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestHeader;
+import com.anvux.common.CreateResult;
 import com.anvux.auth.CurrentUser;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -43,10 +45,15 @@ public class ProjectController {
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ProjectResponse create(@AuthenticationPrincipal Jwt jwt,
-                                  @Valid @RequestBody ProjectCreateRequest request) {
-        return projectService.create(CurrentUser.id(jwt), request);
+    public ResponseEntity<ProjectResponse> create(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @Valid @RequestBody ProjectCreateRequest request) {
+        CreateResult<ProjectResponse> result =
+                projectService.create(CurrentUser.id(jwt), idempotencyKey, request);
+        return ResponseEntity
+                .status(result.created() ? HttpStatus.CREATED : HttpStatus.OK)
+                .body(result.body());
     }
 
     @GetMapping("/{id}")
