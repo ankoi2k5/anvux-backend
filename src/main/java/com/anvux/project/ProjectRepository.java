@@ -1,0 +1,18 @@
+package com.anvux.project;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ProjectRepository extends JpaRepository<Project, UUID> {
+
+    List<Project> findByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    List<Project> findByUserIdAndArchivedFalseOrderByCreatedAtDesc(UUID userId);
+
+    Optional<Project> findByIdAndUserId(UUID id, UUID userId);
+
+    boolean existsByIdAndUserId(UUID id, UUID userId);
+}

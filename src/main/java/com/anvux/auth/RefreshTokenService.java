@@ -8,6 +8,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -35,6 +37,14 @@ public class RefreshTokenService {
         Instant expiresAt = Instant.now().plus(props.refreshTokenDays(), ChronoUnit.DAYS);
         repository.save(new RefreshToken(user, hash(raw), expiresAt));
         return raw;
+    }
+
+    public Optional<RefreshToken> findByRaw(String raw) {
+        return repository.findByTokenHash(hash(raw));
+    }
+
+    public void revokeAll(UUID userId) {
+        repository.revokeAllByUserId(userId, Instant.now());
     }
 
     public static String hash(String raw) {

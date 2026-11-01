@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.anvux.auth.dto.AuthResponse;
 import com.anvux.auth.dto.LoginRequest;
+import com.anvux.auth.dto.RefreshTokenRequest;
 import com.anvux.auth.dto.RegisterRequest;
 
 import jakarta.validation.Valid;
@@ -32,5 +33,16 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    @PostMapping("/refresh")
+    public AuthResponse refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        return authService.refresh(request.refreshToken());
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@Valid @RequestBody RefreshTokenRequest request) {
+        authService.logout(request.refreshToken());
     }
 }

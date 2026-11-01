@@ -27,10 +27,14 @@ import com.nimbusds.jose.jwk.source.ImmutableSecret;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, JsonSecurityErrorHandler errorHandler)
+            throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint(errorHandler)
+                        .accessDeniedHandler(errorHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/v1/auth/**",
@@ -41,7 +45,10 @@ public class SecurityConfig {
                                 "/v3/api-docs/**")
                         .permitAll()
                         .anyRequest().authenticated())
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .authenticationEntryPoint(errorHandler)
+                        .accessDeniedHandler(errorHandler)
+                        .jwt(Customizer.withDefaults()));
         return http.build();
     }
 
