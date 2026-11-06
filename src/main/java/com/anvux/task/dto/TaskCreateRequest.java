@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.anvux.task.TaskPriority;
+import com.anvux.task.TaskRecurrence;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -28,5 +29,7 @@ public record TaskCreateRequest(
 
         @Min(value = 0, message = "Thời gian dự kiến không được âm")
         @Max(value = 100000, message = "Thời gian dự kiến quá lớn")
-        Integer estimatedMinutes) {
+        Integer estimatedMinutes,
+
+        TaskRecurrence recurrence) {
 }

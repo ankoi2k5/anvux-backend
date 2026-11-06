@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.anvux.task.Task;
 import com.anvux.task.TaskPriority;
+import com.anvux.task.TaskRecurrence;
 import com.anvux.task.TaskStatus;
 
 public record TaskResponse(
@@ -18,6 +19,7 @@ public record TaskResponse(
         Instant completedAt,
         Integer estimatedMinutes,
         Integer actualMinutes,
+        TaskRecurrence recurrence,
         Long version,
         Instant createdAt,
         Instant updatedAt) {
@@ -34,6 +36,7 @@ public record TaskResponse(
                 task.getCompletedAt(),
                 task.getEstimatedMinutes(),
                 task.getActualMinutes(),
+                task.getRecurrence(),
                 task.getVersion(),
                 task.getCreatedAt(),
                 task.getUpdatedAt());

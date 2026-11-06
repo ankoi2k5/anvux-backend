@@ -55,6 +55,13 @@ public class Task {
     @Column(name = "actual_minutes")
     private Integer actualMinutes;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private TaskRecurrence recurrence = TaskRecurrence.NONE;
+
+    @Column(name = "spawned_next_id")
+    private UUID spawnedNextId;
+
     @Version
     private Long version;
 
@@ -177,5 +184,20 @@ public class Task {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+    public TaskRecurrence getRecurrence() {
+        return recurrence;
+    }
+
+    public void setRecurrence(TaskRecurrence recurrence) {
+        this.recurrence = recurrence;
+    }
+
+    public UUID getSpawnedNextId() {
+        return spawnedNextId;
+    }
+
+    public void setSpawnedNextId(UUID spawnedNextId) {
+        this.spawnedNextId = spawnedNextId;
     }
 }
