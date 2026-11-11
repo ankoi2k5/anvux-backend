@@ -4,7 +4,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.ai.provider=fake")
 public abstract class AbstractIntegrationTest {
 
     // Một container PostgreSQL duy nhất cho toàn bộ test, tự dọn khi kết thúc.

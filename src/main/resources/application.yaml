@@ -27,3 +27,13 @@ app:
     jwt-secret: ${JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
     access-token-minutes: 15
     refresh-token-days: 30
+  ai:
+    # fake | openai (Gemini, Groq, OpenRouter... theo chuẩn OpenAI) | anthropic
+    provider: ${AI_PROVIDER:fake}
+    api-key: ${AI_API_KEY:${ANTHROPIC_API_KEY:}}
+    model: ${AI_MODEL:gemini-flash-latest}
+    base-url: ${AI_BASE_URL:https://generativelanguage.googleapis.com/v1beta/openai}
+    timeout-seconds: 30
+    max-retries: 2
+    max-plans-per-hour: ${AI_MAX_PLANS_PER_HOUR:10}
+    max-plans-per-day: ${AI_MAX_PLANS_PER_DAY:30}

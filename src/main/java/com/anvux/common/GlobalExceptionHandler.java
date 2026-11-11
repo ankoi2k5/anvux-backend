@@ -10,7 +10,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
+import org.springframework.dao.OptimisticLockingFailureException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -39,5 +39,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleConflict(DataIntegrityViolationException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiError.of("CONFLICT", "Dữ liệu bị trùng hoặc vi phạm ràng buộc"));
+    }
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ApiError> handleOptimisticLock(OptimisticLockingFailureException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiError.of("CONCURRENT_UPDATE", "Dữ liệu vừa bị thay đổi ở nơi khác, vui lòng thử lại"));
     }
 }
