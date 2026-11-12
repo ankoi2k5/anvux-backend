@@ -6,6 +6,7 @@ import java.util.UUID;
 import jakarta.validation.constraints.NotNull;
 
 public record ReminderCreateRequest(
+        UUID id,
         @NotNull(message = "Thiếu công việc")
         UUID taskId,
 

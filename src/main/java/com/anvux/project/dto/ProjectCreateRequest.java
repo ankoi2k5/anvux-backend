@@ -3,8 +3,10 @@ package com.anvux.project.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.util.UUID;
 
 public record ProjectCreateRequest(
+        UUID id,
         @NotBlank(message = "Vui lòng nhập tên dự án")
         @Size(max = 120, message = "Tên dự án tối đa 120 ký tự")
         String name,

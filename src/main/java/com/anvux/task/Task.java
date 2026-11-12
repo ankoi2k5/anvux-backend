@@ -7,8 +7,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -20,7 +18,6 @@ import jakarta.persistence.Version;
 public class Task {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "user_id", nullable = false, updatable = false)
@@ -76,6 +73,12 @@ public class Task {
     }
 
     public Task(UUID userId, UUID projectId, String title) {
+        this(null, userId, projectId, title);
+    }
+
+    /** id null thì server tự sinh; thiết bị offline-first gửi id của mình lên. */
+    public Task(UUID id, UUID userId, UUID projectId, String title) {
+        this.id = id != null ? id : UUID.randomUUID();
         this.userId = userId;
         this.projectId = projectId;
         this.title = title.trim();

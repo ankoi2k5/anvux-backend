@@ -58,7 +58,15 @@ public class ReminderService {
                 return new CreateResult<>(ReminderResponse.from(existing.get()), false);
             }
         }
-
+        if (request.id() != null) {
+            Optional<Reminder> mine = reminders.findByIdAndUserId(request.id(), userId);
+            if (mine.isPresent()) {
+                return new CreateResult<>(ReminderResponse.from(mine.get()), false);
+            }
+            if (reminders.existsById(request.id())) {
+                throw new ApiException(HttpStatus.CONFLICT, "ID_ALREADY_USED", "Mã này đã được dùng");
+            }
+        }
         // Công việc của người khác coi như không tồn tại.
         if (tasks.findByIdAndUserId(request.taskId(), userId).isEmpty()) {
             throw new ResourceNotFoundException("Không tìm thấy công việc");
@@ -71,7 +79,8 @@ public class ReminderService {
             throw new ApiException(HttpStatus.CONFLICT, "REMINDER_EXISTS", "Nhắc nhở này đã tồn tại");
         }
 
-        Reminder saved = reminders.save(new Reminder(userId, request.taskId(), request.remindAt()));
+        Reminder saved = reminders.save(
+                new Reminder(request.id(), userId, request.taskId(), request.remindAt()));
         if (key != null) {
             idempotency.remember(userId, key, RESOURCE_TYPE, saved.getId());
         }

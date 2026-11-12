@@ -75,13 +75,22 @@ public class TaskService {
                 return new CreateResult<>(TaskResponse.from(existing.get()), false);
             }
         }
+        if (request.id() != null) {
+            Optional<Task> mine = tasks.findByIdAndUserId(request.id(), userId);
+            if (mine.isPresent()) {
+                return new CreateResult<>(TaskResponse.from(mine.get()), false);
+            }
+            if (tasks.existsById(request.id())) {
+                throw new ApiException(HttpStatus.CONFLICT, "ID_ALREADY_USED", "Mã này đã được dùng");
+            }
+        }
 
         requireOwnedProject(userId, request.projectId());
 
         TaskRecurrence recurrence = request.recurrence() == null ? TaskRecurrence.NONE : request.recurrence();
         requireDueDateForRecurrence(recurrence, request.dueAt());
 
-        Task task = new Task(userId, request.projectId(), request.title());
+        Task task = new Task(request.id(), userId, request.projectId(), request.title());
         task.setDescription(request.description());
         if (request.priority() != null) {
             task.setPriority(request.priority());

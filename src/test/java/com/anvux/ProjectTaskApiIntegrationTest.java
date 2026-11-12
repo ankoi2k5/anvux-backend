@@ -345,4 +345,56 @@ class ProjectTaskApiIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_IDEMPOTENCY_KEY"));
     }
+    @Test
+    void createWithClientIds_keepsIds_andRetryDoesNotDuplicate() throws Exception {
+        String token = registerAndGetToken();
+        String projectId = UUID.randomUUID().toString();
+        String taskId = UUID.randomUUID().toString();
+
+        mockMvc.perform(post("/api/v1/projects")
+                        .header(AUTH, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"id":"%s","name":"Offline"}""".formatted(projectId)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(projectId));
+
+        String taskBody = """
+                {"id":"%s","projectId":"%s","title":"Viec offline"}""".formatted(taskId, projectId);
+        mockMvc.perform(post("/api/v1/tasks").header(AUTH, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON).content(taskBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(taskId));
+
+        // Gửi lại đúng yêu cầu đó (mạng chập chờn): trả bản cũ, không tạo bản sao.
+        mockMvc.perform(post("/api/v1/tasks").header(AUTH, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON).content(taskBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(taskId));
+
+        mockMvc.perform(get("/api/v1/tasks").header(AUTH, bearer(token)))
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    void createWithIdOwnedByAnotherUser_returns409() throws Exception {
+        String tokenA = registerAndGetToken();
+        String tokenB = registerAndGetToken();
+        String projectA = createProject(tokenA, "A");
+        String projectB = createProject(tokenB, "B");
+        String sharedId = UUID.randomUUID().toString();
+
+        mockMvc.perform(post("/api/v1/tasks").header(AUTH, bearer(tokenA))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"id":"%s","projectId":"%s","title":"Cua A"}""".formatted(sharedId, projectA)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/v1/tasks").header(AUTH, bearer(tokenB))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"id":"%s","projectId":"%s","title":"Cua B"}""".formatted(sharedId, projectB)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("ID_ALREADY_USED"));
+    }
 }

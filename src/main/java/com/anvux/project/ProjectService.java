@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.anvux.common.ApiException;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,9 +53,18 @@ public class ProjectService {
                 return new CreateResult<>(ProjectResponse.from(existing.get()), false);
             }
         }
+        if (request.id() != null) {
+            Optional<Project> mine = projects.findByIdAndUserId(request.id(), userId);
+            if (mine.isPresent()) {
+                return new CreateResult<>(ProjectResponse.from(mine.get()), false);
+            }
+            if (projects.existsById(request.id())) {
+                throw new ApiException(HttpStatus.CONFLICT, "ID_ALREADY_USED", "Mã này đã được dùng");
+            }
+        }
 
         Project project = projects.save(
-                new Project(userId, request.name(), request.description(), request.color()));
+                new Project(request.id(), userId, request.name(), request.description(), request.color()));
         if (key != null) {
             idempotency.remember(userId, key, RESOURCE_TYPE, project.getId());
         }

@@ -157,7 +157,8 @@ public class AiPlanService {
         }
 
         plan.markExecuted();
-        return AiPlanResponse.from(plan);
+        // Ghi xuống DB trước khi dựng phản hồi để các item mới có id.
+        return AiPlanResponse.from(plans.saveAndFlush(plan));
     }
 
     @Transactional
@@ -239,4 +240,4 @@ public class AiPlanService {
         String oneLine = text.replaceAll("\\s+", " ");
         return oneLine.length() <= max ? oneLine : oneLine.substring(0, max).trim();
     }
-}
+}

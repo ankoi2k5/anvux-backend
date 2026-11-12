@@ -5,8 +5,6 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -18,7 +16,6 @@ import jakarta.persistence.Version;
 public class Reminder {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "user_id", nullable = false, updatable = false)
@@ -47,6 +44,11 @@ public class Reminder {
     }
 
     public Reminder(UUID userId, UUID taskId, Instant remindAt) {
+        this(null, userId, taskId, remindAt);
+    }
+
+    public Reminder(UUID id, UUID userId, UUID taskId, Instant remindAt) {
+        this.id = id != null ? id : UUID.randomUUID();
         this.userId = userId;
         this.taskId = taskId;
         this.remindAt = remindAt;

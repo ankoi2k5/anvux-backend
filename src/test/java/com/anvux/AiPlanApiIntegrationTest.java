@@ -205,7 +205,9 @@ class AiPlanApiIntegrationTest extends AbstractIntegrationTest {
                                   {"title":"Viec mot","priority":"HIGH"},
                                   {"title":"Viec hai","priority":"LOW"}]}"""))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items.length()").value(2));
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.items[0].id").isNotEmpty())
+                .andExpect(jsonPath("$.items[0].createdTaskId").isNotEmpty());
 
         mockMvc.perform(get("/api/v1/tasks").header(AUTH, bearer(token)))
                 .andExpect(jsonPath("$.length()").value(2));

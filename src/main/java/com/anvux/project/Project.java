@@ -5,8 +5,6 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -18,7 +16,6 @@ import jakarta.persistence.Version;
 public class Project {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "user_id", nullable = false, updatable = false)
@@ -50,6 +47,11 @@ public class Project {
     }
 
     public Project(UUID userId, String name, String description, String color) {
+        this(null, userId, name, description, color);
+    }
+
+    public Project(UUID id, UUID userId, String name, String description, String color) {
+        this.id = id != null ? id : UUID.randomUUID();
         this.userId = userId;
         this.name = name.trim();
         this.description = blankToNull(description);
